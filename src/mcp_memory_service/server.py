@@ -2447,6 +2447,19 @@ class MemoryServer:
                 tools.extend(quality_tools)
                 logger.info(f"Added {len(quality_tools)} quality system tools")
 
+                # Apply tool filtering (Added by yunpiao)
+                from .config import MCP_TOOLS_ALLOW, MCP_TOOLS_DENY
+                original_count = len(tools)
+
+                if MCP_TOOLS_ALLOW:
+                    tools = [t for t in tools if t.name in MCP_TOOLS_ALLOW]
+                    logger.info(f"Tool filter (ALLOW): {original_count} -> {len(tools)} tools")
+
+                if MCP_TOOLS_DENY:
+                    before_deny = len(tools)
+                    tools = [t for t in tools if t.name not in MCP_TOOLS_DENY]
+                    logger.info(f"Tool filter (DENY): {before_deny} -> {len(tools)} tools")
+
                 logger.info(f"Returning {len(tools)} tools")
                 return tools
             except Exception as e:

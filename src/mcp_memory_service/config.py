@@ -955,3 +955,28 @@ logger.info(f"Graph Storage Mode: {GRAPH_STORAGE_MODE}")
 # =============================================================================
 # End Graph Database Configuration
 # =============================================================================
+
+# =============================================================================
+# Tool Filter Configuration (Added by yunpiao)
+# =============================================================================
+
+# MCP_TOOLS_ALLOW: Comma-separated list of tool names to expose
+# If set, only these tools will be available. If empty/unset, all tools are exposed.
+# Example: MCP_TOOLS_ALLOW="store_memory,retrieve_memory,search_by_tag,recall_memory,delete_memory,check_database_health"
+MCP_TOOLS_ALLOW_RAW = os.getenv('MCP_TOOLS_ALLOW', '')
+MCP_TOOLS_ALLOW = [t.strip() for t in MCP_TOOLS_ALLOW_RAW.split(',') if t.strip()] if MCP_TOOLS_ALLOW_RAW else []
+
+# MCP_TOOLS_DENY: Comma-separated list of tool names to hide
+# If set, these tools will be excluded. Applied after ALLOW filter.
+# Example: MCP_TOOLS_DENY="ingest_document,ingest_directory"
+MCP_TOOLS_DENY_RAW = os.getenv('MCP_TOOLS_DENY', '')
+MCP_TOOLS_DENY = [t.strip() for t in MCP_TOOLS_DENY_RAW.split(',') if t.strip()] if MCP_TOOLS_DENY_RAW else []
+
+if MCP_TOOLS_ALLOW:
+    logger.info(f"Tool Filter (ALLOW): {MCP_TOOLS_ALLOW}")
+if MCP_TOOLS_DENY:
+    logger.info(f"Tool Filter (DENY): {MCP_TOOLS_DENY}")
+
+# =============================================================================
+# End Tool Filter Configuration
+# =============================================================================
