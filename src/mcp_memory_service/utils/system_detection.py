@@ -112,23 +112,29 @@ class SystemInfo:
         
     def _detect_accelerator(self) -> str:
         """Detect available hardware acceleration."""
+        # OPTIMIZATION: Skip heavy torch import when using Cloudflare backend
+        # Cloudflare uses remote embedding, no local accelerator needed
+        if os.getenv('MCP_MEMORY_STORAGE_BACKEND', '').lower() == 'cloudflare':
+            logger.debug("Cloudflare backend detected, skipping accelerator detection")
+            return AcceleratorType.CPU
+
         # Try to detect CUDA
         if self._check_cuda_available():
             return AcceleratorType.CUDA
-            
+
         # Check for Apple MPS (Metal Performance Shaders)
         if self.os_name == "darwin" and self.architecture == Architecture.ARM64:
             if self._check_mps_available():
                 return AcceleratorType.MPS
-                
+
         # Check for ROCm on Linux
         if self.os_name == "linux" and self._check_rocm_available():
             return AcceleratorType.ROCm
-            
+
         # Check for DirectML on Windows
         if self.os_name == "windows" and self._check_directml_available():
             return AcceleratorType.DIRECTML
-            
+
         # Default to CPU
         return AcceleratorType.CPU
         

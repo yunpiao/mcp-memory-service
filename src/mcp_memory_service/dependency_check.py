@@ -72,37 +72,51 @@ def check_critical_dependencies() -> Tuple[bool, list]:
     Returns (all_installed, missing_packages)
     """
     missing = []
-    
-    # Check PyTorch
-    torch_installed, torch_version = check_torch_installed()
-    if not torch_installed:
-        missing.append("torch")
+
+    # OPTIMIZATION: Skip torch/sentence_transformers check for Cloudflare backend
+    # Cloudflare uses remote embedding via Workers AI, no local models needed
+    storage_backend = os.getenv('MCP_MEMORY_STORAGE_BACKEND', '').lower()
+    skip_local_models = storage_backend == 'cloudflare'
+
+    if skip_local_models:
+        logger.debug("Cloudflare backend detected, skipping torch/sentence_transformers check")
     else:
-        logger.debug(f"PyTorch {torch_version} is installed")
-    
-    # Check sentence-transformers
-    st_installed, st_version = check_sentence_transformers_installed()
-    if not st_installed:
-        missing.append("sentence-transformers")
-    else:
-        logger.debug(f"sentence-transformers {st_version} is installed")
-    
-    # Check other critical packages
+        # Check PyTorch
+        torch_installed, torch_version = check_torch_installed()
+        if not torch_installed:
+            missing.append("torch")
+        else:
+            logger.debug(f"PyTorch {torch_version} is installed")
+
+        # Check sentence-transformers
+        st_installed, st_version = check_sentence_transformers_installed()
+        if not st_installed:
+            missing.append("sentence-transformers")
+        else:
+            logger.debug(f"sentence-transformers {st_version} is installed")
+
+        # Check sqlite-vec (only needed for local storage)
+        try:
+            __import__("sqlite_vec")
+            logger.debug("sqlite-vec is installed")
+        except ImportError:
+            missing.append("sqlite-vec")
+
+    # Check other critical packages (always needed)
     critical_packages = [
-        "sqlite-vec",
         "mcp",
         "aiohttp",
         "fastapi",
         "uvicorn"
     ]
-    
+
     for package in critical_packages:
         try:
             __import__(package.replace("-", "_"))
             logger.debug(f"{package} is installed")
         except ImportError:
             missing.append(package)
-    
+
     return len(missing) == 0, missing
 
 def suggest_installation_command(missing_packages: list) -> str:

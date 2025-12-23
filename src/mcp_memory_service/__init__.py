@@ -63,9 +63,14 @@ __all__ = [
 ]
 
 # Import storage backends conditionally
-try:
-    from .storage import SqliteVecMemoryStorage
-    __all__.append('SqliteVecMemoryStorage')
-except ImportError:
+# OPTIMIZATION: Skip SqliteVecMemoryStorage import for Cloudflare backend to avoid torch loading
+_STORAGE_BACKEND = os.getenv('MCP_MEMORY_STORAGE_BACKEND', 'sqlite').lower()
+if _STORAGE_BACKEND != 'cloudflare':
+    try:
+        from .storage import SqliteVecMemoryStorage
+        __all__.append('SqliteVecMemoryStorage')
+    except ImportError:
+        SqliteVecMemoryStorage = None
+else:
     SqliteVecMemoryStorage = None
 
